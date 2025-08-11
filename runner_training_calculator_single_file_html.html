@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Training Calculator — Workout Sheet (Fixed)</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#10b981;--muted:#94a3b8;--glass: rgba(255,255,255,0.02)}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;color:#e6eef6;background:linear-gradient(180deg,#071024 0%,#071733 100%)}
+    .wrap{max-width:900px;margin:18px auto;padding:18px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    h1{font-size:1.2rem;margin:0}
+    p.lead{margin:4px 0 12px;color:var(--muted);font-size:0.9rem}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 6px 18px rgba(2,6,23,0.6);border:1px solid rgba(255,255,255,0.02)}
+    label{display:block;font-size:0.8rem;color:var(--muted);margin-bottom:6px}
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    input[type=text], input[type=number], select{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;min-width:120px}
+    textarea{width:100%;min-height:70px;padding:8px;border-radius:8px;background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.04)}
+    button{background:var(--accent);color:#04211a;border:0;padding:10px 12px;border-radius:10px;font-weight:600}
+    .muted{color:var(--muted);font-size:0.85rem}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .small{font-size:0.85rem}
+    .result{background:var(--glass);padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.02)}
+    .interval-row{display:flex;align-items:center;justify-content:space-between;padding:8px 6px;border-radius:8px}
+    .input-time{width:120px}
+    footer{color:var(--muted);font-size:0.78rem;text-align:center;margin-top:6px}
+    #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;padding:10px 14px;border-radius:10px;display:none;background:#0b1220;border:1px solid rgba(255,255,255,0.03);box-shadow:0 6px 18px rgba(2,6,23,0.6);color:var(--muted)}
+    #testResults{white-space:pre-wrap;font-family:monospace;font-size:0.9rem;margin-top:8px;color:var(--muted)}
+    @media (max-width:520px){h1{font-size:1rem}.wrap{padding:12px}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Training Calculator — Mobile HTML</h1>
+        <p class="lead">Interactive workout calculator + record sheet. Tap the calculations, enter your paces/times and export results.</p>
+      </div>
+      <div class="muted small">Phone-friendly</div>
+    </header>
+
+    <section class="card" id="session-info">
+      <strong>Session / Meetup</strong>
+      <div class="row" style="margin-top:8px">
+        <div style="flex:1;min-width:200px">
+          <label>Location (map link)</label>
+          <input id="mapLink" type="text" value="https://goo.gl/maps/" placeholder="Paste Google Maps link" />
+        </div>
+        <div>
+          <label>Meetup time</label>
+          <input id="meetTime" type="text" value="17:00" />
+        </div>
+      </div>
+      <p class="muted small" style="margin-top:8px">Workout source: Mike Smith (N. Arizona) — Nico Young session. Objective: ascertain speed, lengthen stride, feel the glide.</p>
+    </section>
+
+    <section class="card">
+      <strong>Baseline input</strong>
+      <p class="muted small">Enter a known pace/time — you can give a 5km time, or a pace per km, or a known 400m fast time.</p>
+      <div class="grid" style="margin-top:8px">
+        <div>
+          <label>5km time (mm:ss) — optional</label>
+          <input id="time5k" type="text" placeholder="e.g. 18:30" />
+        </div>
+        <div>
+          <label>Prefer to enter 1 km pace (mm:ss per km)</label>
+          <input id="pace1k" type="text" placeholder="e.g. 04:00" />
+        </div>
+        <div>
+          <label>Known fast 400m time (mm:ss) — optional</label>
+          <input id="time400" type="text" placeholder="e.g. 00:58" />
+        </div>
+        <div>
+          <label>Units</label>
+          <select id="units"><option value="metric">Metric (m, km)</option><option value="imperial">Imperial (yd/mi)</option></select>
+        </div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <button id="calcBtn">Calculate paces</button>
+        <button id="clearBtn" style="background:#334155;color:white">Clear</button>
+        <button id="demoBtn" style="background:#64748b;color:white">Run demo / test</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <strong>Workout calculator</strong>
+      <p class="muted small">This auto-fills recommended target times for the session structure. You can edit any target or enter your recorded times after the run.</p>
+
+      <div style="margin-top:8px">
+        <div class="result">
+          <div style="font-weight:700;margin-bottom:6px">Warmup / Drills</div>
+          <div class="interval-row"><div>800 m warmup (gentle)</div><div class="muted">—</div></div>
+          <div class="interval-row"><div>400 m drills</div><div class="muted">—</div></div>
+          <div class="interval-row"><div>400 m short speed</div><div class="muted">—</div></div>
+        </div>
+
+        <h4 style="margin:10px 0 6px">Main sets (automatic targets)</h4>
+
+        <div class="result" id="mainSets">
+          <!-- dynamic rows -->
+        </div>
+
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <button id="exportBtn" style="background:#06b6d4;color:#002025">Export CSV</button>
+          <button id="resetRecords" style="background:#ef4444">Reset recorded times</button>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="card">
+      <strong>Notes & coaching cues</strong>
+      <p class="muted small">"Claw yourself forward" — focus on light footstrike, propulsion from backward push-off, tall posture. Use walk breaks and stretches as written in the plan.</p>
+      <textarea id="notes">
+Location: Bike Path (In front of Kasetsart University Veterinary Teaching Hospital Hua Hin)
+Meetup time: 17:00
+Workout Objective: ascertain speed capabilities, lengthen stride and feel the glide.
+
+Warmup: 800m gentle, 400m drills, 400m short speed
+Main: 400m (90% effort), 1600m (30-40s slower than fast 400m), 4x400m (2' rest) same as 1600m pace, 800m same or a little faster than 1600m pace
+
+Use the record fields to save your watch times and then export the CSV.
+      </textarea>
+
+      <div id="testResults" class="muted"></div>
+    </section>
+
+    <footer class="muted">Made for mobile use — tap "Calculate paces" then edit or record your actual times. CSV export includes targets and recorded times.</footer>
+  </div>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  // Wrap everything to avoid leaking globals and to avoid conflicts with browser extensions.
+  document.addEventListener('DOMContentLoaded', function(){
+    try{
+      // helper functions
+      function mmssToSec(mmss){
+        if(mmss==null) return null;
+        const s = String(mmss).trim();
+        if(s==='') return null;
+        const parts = s.split(':').map(p=>p.trim());
+        if(parts.length===1){ const n = Number(parts[0]); return Number.isFinite(n) ? n : null; }
+        if(parts.length===2){ const m = parseInt(parts[0],10); const sec = parseFloat(parts[1]); if(Number.isFinite(m) && Number.isFinite(sec)) return m*60 + sec; return null; }
+        if(parts.length===3){ const h = parseInt(parts[0],10); const m = parseInt(parts[1],10); const sec = parseFloat(parts[2]); if(Number.isFinite(h)&&Number.isFinite(m)&&Number.isFinite(sec)) return h*3600 + m*60 + sec; return null; }
+        return null;
+      }
+      function secToMmss(s){
+        if(s==null || !Number.isFinite(s)) return '';
+        const total = Math.round(s);
+        const mm = Math.floor(total/60);
+        const ss = total%60;
+        return String(mm).padStart(2,'0') + ':' + String(ss).padStart(2,'0');
+      }
+
+      function showToast(msg,timeout=2500){
+        try{
+          const t = document.getElementById('toast');
+          t.textContent = msg; t.style.display='block';
+          clearTimeout(t._to);
+          t._to = setTimeout(()=>{ t.style.display='none'; }, timeout);
+        }catch(e){ console.warn('toast failed', e) }
+      }
+
+      // Elements
+      const mainSetsEl = document.getElementById('mainSets');
+      const time5kEl = document.getElementById('time5k');
+      const pace1kEl = document.getElementById('pace1k');
+      const time400El = document.getElementById('time400');
+      const mapLinkEl = document.getElementById('mapLink');
+      const meetTimeEl = document.getElementById('meetTime');
+      const notesEl = document.getElementById('notes');
+      const testResultsEl = document.getElementById('testResults');
+
+      // Data model
+      const defaultSets = [
+        {id:'fast400', label:'400 m (fast ~90%)', dist:400, targetSec:null, recorded:null, note:'Record your 400m watch time. Distance marker 300m-700m'},
+        {id:'easy1600', label:'1600 m (30–40s slower than fast 400m)', dist:1600, targetSec:null, recorded:null, note:'Distance marker 300m-1900m'},
+        {id:'rep4x400', label:'4 × 400 m (2 min rest) — target same as 1600m effort', dist:400, targetSec:null, recorded:[null,null,null,null], note:'Distance markers vary; record each rep'},
+        {id:'final800', label:'800 m (same or a little faster than 1600m)', dist:800, targetSec:null, recorded:null, note:'Distance marker 1100m-300m'}
+      ];
+
+      // Rendering
+      function renderSets(){
+        mainSetsEl.innerHTML = '';
+        defaultSets.forEach(function(s){
+          const row = document.createElement('div'); row.className='interval-row';
+          const left = document.createElement('div'); left.style.minWidth='40%';
+          left.innerHTML = '<div style="font-weight:700">'+s.label+'</div><div class="muted small">'+s.note+'</div>';
+
+          const right = document.createElement('div');
+
+          if(s.id==='rep4x400'){
+            const container = document.createElement('div'); container.style.display='flex'; container.style.gap='6px';
+            for(let i=0;i<4;i++){
+              const inp = document.createElement('input'); inp.type='text'; inp.placeholder='mm:ss'; inp.className='input-time'; inp.dataset.idx=i;
+              inp.value = s.recorded && typeof s.recorded[i] === 'number' ? secToMmss(s.recorded[i]) : '';
+              inp.addEventListener('input', function(e){ const v = mmssToSec(e.target.value); s.recorded[Number(e.target.dataset.idx)] = v; });
+              container.appendChild(inp);
+            }
+            right.appendChild(container);
+          } else {
+            const inp = document.createElement('input'); inp.type='text'; inp.placeholder='target / actual mm:ss'; inp.className='input-time';
+            inp.value = (s.recorded && typeof s.recorded === 'number') ? secToMmss(s.recorded) : '';
+            inp.addEventListener('input', function(e){ s.recorded = mmssToSec(e.target.value); });
+            right.appendChild(inp);
+          }
+
+          const targ = document.createElement('div'); targ.className='muted small'; targ.style.marginTop='6px';
+          targ.textContent = s.targetSec ? ('Target: '+secToMmss(s.targetSec)) : 'Target: --:--';
+
+          const wrapper = document.createElement('div'); wrapper.style.textAlign='right'; wrapper.appendChild(targ);
+          right.appendChild(wrapper);
+
+          row.appendChild(left); row.appendChild(right); mainSetsEl.appendChild(row);
+        });
+      }
+
+      // Calculation logic with defensive programming and clear heuristics
+      function computeTargets(){
+        try{
+          // parse inputs
+          const pace1kUser = mmssToSec(pace1kEl.value);
+          const t5k = mmssToSec(time5kEl.value);
+          const t400 = mmssToSec(time400El.value);
+
+          // derive a 1k pace in seconds
+          let pace1k = null;
+          if(Number.isFinite(pace1kUser)) pace1k = pace1kUser;
+          else if(Number.isFinite(t5k)) pace1k = t5k/5;
+          else if(Number.isFinite(t400)){
+            // heuristic: convert a 400m fast rep to an approximate 1k pace with a multiplier
+            pace1k = t400 * 2.55; // heuristic
+          }
+
+          // If pace1k is still null we can't compute reliable targets
+          // compute a derived 'fast 400' target
+          const idxFast = defaultSets.findIndex(s=>s.id==='fast400');
+          const idx1600 = defaultSets.findIndex(s=>s.id==='easy1600');
+          const idx4x = defaultSets.findIndex(s=>s.id==='rep4x400');
+          const idx800 = defaultSets.findIndex(s=>s.id==='final800');
+
+          if(Number.isFinite(t400)){
+            defaultSets[idxFast].targetSec = Math.round(t400);
+          } else if(Number.isFinite(pace1k)){
+            // estimate a fast 400m from 1k pace (rough heuristic)
+            defaultSets[idxFast].targetSec = Math.round(pace1k * 0.4);
+          } else {
+            defaultSets[idxFast].targetSec = null;
+          }
+
+          // 1600 target: use fast400*4 + 30-40s (per original plan) OR use 1k pace if available
+          if(Number.isFinite(defaultSets[idxFast].targetSec)){
+            defaultSets[idx1600].targetSec = Math.round(defaultSets[idxFast].targetSec*4 + 35);
+          } else if(Number.isFinite(pace1k)){
+            defaultSets[idx1600].targetSec = Math.round(pace1k*1.6 + 30);
+          } else {
+            defaultSets[idx1600].targetSec = null;
+          }
+
+          // 4x400 targets = 1600/4
+          if(Number.isFinite(defaultSets[idx1600].targetSec)){
+            defaultSets[idx4x].targetSec = Math.round(defaultSets[idx1600].targetSec/4);
+          } else {
+            defaultSets[idx4x].targetSec = null;
+          }
+
+          // 800 target = half of 1600 target minus a small buffer
+          if(Number.isFinite(defaultSets[idx1600].targetSec)){
+            defaultSets[idx800].targetSec = Math.round(defaultSets[idx1600].targetSec/2 - 6);
+          } else {
+            defaultSets[idx800].targetSec = null;
+          }
+
+          renderSets();
+          showToast('Targets calculated');
+          return true;
+        }catch(err){
+          console.error('computeTargets error', err);
+          showToast('Calculation error — see console');
+          return false;
+        }
+      }
+
+      // CSV export with safety checks
+      function exportCSV(){
+        try{
+          const rows = [];
+          rows.push(['Label','Distance(m)','Target','Recorded']);
+          defaultSets.forEach(function(s){
+            if(s.id==='rep4x400'){
+              for(let i=0;i<4;i++){
+                rows.push([s.label+' rep '+(i+1), s.dist, s.targetSec?secToMmss(s.targetSec):'--:--', (s.recorded && typeof s.recorded[i]==='number')?secToMmss(s.recorded[i]):'']);
+              }
+            } else {
+              rows.push([s.label, s.dist, s.targetSec?secToMmss(s.targetSec):'--:--', (s.recorded && typeof s.recorded==='number')?secToMmss(s.recorded):'']);
+            }
+          });
+
+          const mapLink = (mapLinkEl && mapLinkEl.value) ? mapLinkEl.value : '';
+          const meetTime = (meetTimeEl && meetTimeEl.value) ? meetTimeEl.value : '';
+          const notes = (notesEl && notesEl.value) ? notesEl.value.replace(/\n/g,' ') : '';
+
+          let csv = 'Session,'+ '"'+ (mapLink.replace(/"/g,'""')||'') +'",'+ '"'+ (meetTime.replace(/"/g,'""')||'') +'"\n';
+          csv += 'Notes,"'+notes.replace(/"/g,'""')+'"\n\n';
+          rows.forEach(function(r){ csv += r.map(function(c){ return '"'+String(c).replace(/"/g,'""')+'"'; }).join(',') + '\n'; });
+
+          const blob = new Blob([csv], {type:'text/csv'});
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a'); a.href = url; a.download = 'workout_records.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+          showToast('CSV exported');
+        }catch(err){
+          console.error('exportCSV error', err);
+          showToast('Export failed — see console');
+        }
+      }
+
+      // Defensive checks for web3 / MetaMask: do not attempt to connect. Some browser extensions inject objects — we avoid touching them.
+      if(typeof window.ethereum !== 'undefined'){
+        console.log('Ethereum provider detected in the page. This app will not attempt to connect to MetaMask.');
+      }
+
+      // Controls
+      function resetRecords(){
+        defaultSets.forEach(function(s){
+          if(Array.isArray(s.recorded)) for(let i=0;i<s.recorded.length;i++) s.recorded[i] = null;
+          else s.recorded = null;
+        });
+        renderSets();
+        showToast('Records reset');
+      }
+
+      function clearInputs(){
+        time5kEl.value = '';
+        pace1kEl.value = '';
+        time400El.value = '';
+        resetRecords();
+      }
+
+      // Demo/test runner
+      function runDemo(){
+        // Populate some example values and compute targets — this is a safe test case
+        time5kEl.value = '18:30';
+        pace1kEl.value = '';
+        time400El.value = '00:56';
+        const ok = computeTargets();
+        if(ok) {
+          testResultsEl.textContent = 'Demo inputs: 5k=18:30, 400m=00:56\nCalculated targets:\n' + defaultSets.map(function(s){ if(Array.isArray(s.recorded)) return s.label + ' target: ' + (s.targetSec?secToMmss(s.targetSec):'--:--'); return s.label + ' target: ' + (s.targetSec?secToMmss(s.targetSec):'--:--'); }).join('\n');
+          showToast('Demo complete — results shown');
+        } else {
+          testResultsEl.textContent = 'Demo failed — see console.';
+        }
+      }
+
+      // Attach events
+      document.getElementById('calcBtn').addEventListener('click', computeTargets);
+      document.getElementById('clearBtn').addEventListener('click', clearInputs);
+      document.getElementById('demoBtn').addEventListener('click', runDemo);
+      document.getElementById('resetRecords').addEventListener('click', resetRecords);
+      document.getElementById('exportBtn').addEventListener('click', exportCSV);
+
+      // Initial render
+      renderSets();
+
+      // Run a quick self-test (non-destructive) to ensure helpers work — added as a safety check for debugging environments.
+      (function quickSelfTest(){
+        try{
+          const a = mmssToSec('4:00');
+          const b = secToMmss(240);
+          if(a!==240 || b!=='04:00'){
+            console.warn('self-test unexpected values', {a,b});
+          } else {
+            console.log('self-test passed');
+          }
+        }catch(e){ console.warn('self-test error', e); }
+      })();
+
+    }catch(e){
+      console.error('App failed to initialize', e);
+      const t = document.getElementById('testResults'); if(t) t.textContent = 'Initialization error — check console.';
+    }
+  });
+})();
+</script>
+</body>
+</html>
